@@ -1,3 +1,46 @@
+## PathWise AI — Conversational Advisor (Version 2)
+
+### Research problem
+Learners and working professionals often struggle to identify education and career pathways suited to their academic backgrounds, transferable skills, personal constraints, and evolving aspirations. General guidance may not adapt sufficiently to the individual or offer actionable next steps.
+
+### Research goal
+Develop an LLM-powered personalized education and career decision-support system that interprets user goals and backgrounds, explores realistic alternatives, supports discovery of academic opportunities, and produces adaptable action plans through natural-language interaction.
+
+### Research question
+How effectively can conversational profile understanding and grounded information retrieval support personalized education and career guidance across different learner backgrounds and constraints?
+
+### Implemented interface
+- One conversational interface for career transitions, higher education, opportunity discovery and personalized plans.
+- Optional background information, used within the current session.
+- Multi-turn follow-up questions with recent conversation context.
+- Gemini-generated tailored guidance.
+- Optional Google Search grounding through the Gemini API, with available returned source links displayed.
+- No demonstration catalog, numerical ranking scores, algorithm selector, or public evaluation dashboard.
+
+### Technical approach
+Streamlit provides the interface. The `google-genai` SDK calls a configured Gemini model. Optional Gemini Google Search grounding can retrieve recent information where supported. Grounding links are displayed only when returned by the provider. The app does not scrape or maintain its own scholarship database, independently verify admissions eligibility, or guarantee up-to-date results.
+
+### Evaluation status and limitations
+Version 2 is an interactive research prototype. It has not been validated through a user study or independently benchmarked against human advisors or alternative recommendation systems. A future evaluation should examine usefulness, personalization, source support, fairness across learner backgrounds, and the accuracy of time-sensitive opportunity information. A lack of grounding citations is not evidence of verification.
+
+### Deployment
+Use `app.py` as the Streamlit entry point and `requirements.txt` for dependencies. In Streamlit Cloud secrets, set:
+
+```toml
+GEMINI_API_KEY = "your-key"
+GEMINI_MODEL = "gemini-2.5-flash"
+```
+
+Do not commit API keys. Search grounding depends on Gemini model and account availability. If grounding fails, disable the Search preferences checkbox.
+
+### Research references
+Keep the research literature and USAII CAIE curriculum citations in the existing project's README. These motivate the project; they do not establish the performance of this implementation.
+
+
+---
+
+## Previous prototype and research background
+
 # PathWise AI
 
 **Personalized Learning Pathways and Education Opportunity Matching**

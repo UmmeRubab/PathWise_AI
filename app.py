@@ -1,102 +1,147 @@
+"""PathWise AI: personalized education and career decision support."""
 from __future__ import annotations
-import json
-from pathlib import Path
-import pandas as pd
+
+import os
+from datetime import date
+from urllib.parse import urlparse
+
 import streamlit as st
-from pathwise.engine import normalize_profile, recommend, evaluate_profiles
-from pathwise.llm import explain
 
-ROOT = Path(__file__).parent
-st.set_page_config(page_title="PathWise AI | Personalized Recommendations", page_icon="🧭", layout="wide")
-st.markdown("""<style>.block-container{padding-top:2rem;max-width:1250px}div[data-testid='stMetric']{border:1px solid #e2e8f0;padding:12px;border-radius:12px}h1{letter-spacing:-.04em}</style>""", unsafe_allow_html=True)
+st.set_page_config(page_title="PathWise AI | Your Personal AI Advisor", page_icon="🧭", layout="centered")
+st.markdown("""<style>
+.block-container {max-width: 940px; padding-top: 2.2rem; padding-bottom: 4rem}
+h1 {letter-spacing: -.045em; margin-bottom: .1rem}
+[data-testid="stSidebar"] {background: #f7faf9}
+.stButton > button {border-radius: 12px}
+[data-testid="stChatMessage"] {border-radius: 14px; padding: 1rem}
+</style>""", unsafe_allow_html=True)
+
+SYSTEM = """You are PathWise AI, a thoughtful personalized education and career advisor.
+Your mission is to help people make practical education and career decisions, especially learners with nontraditional backgrounds and limited resources.
+Use the supplied user profile and prior conversation to tailor your advice. Never assume unstated degrees, citizenship, grades, finances, or experience.
+For each request: understand the goal; identify relevant transferable strengths and gaps; give 2-4 realistic paths or options with trade-offs; recommend concrete next actions. Keep responses easy to read and avoid unnecessary technical jargon.
+Ask at most one essential clarifying question if it would substantially change the recommendation; otherwise proceed with transparent assumptions.
+For academic programs, scholarships, funding, deadlines, immigration, or eligibility: do not invent institutions, awards, amounts, opening status, URLs, requirements, or guarantees. If current official sources have not been verified, say 'Current details have not been verified; check the official provider website.' Distinguish likely fit from formal eligibility. Do not invent citations.
+For learning plans, recommend skills, milestones and projects tailored to the user's constraints; do not default to course catalogs or commercial course promotions.
+Do not expose raw reasoning, model internals, or numeric similarity scores. Never claim that the user's information is saved across sessions.
+"""
+
+STARTERS = [
+    "I want to change careers. Help me explore realistic options.",
+    "Help me find suitable higher-education and scholarship opportunities.",
+    "Create a personalized action plan for my education or career goal.",
+    "I have a nontraditional academic background. What are my next steps?",
+]
+
+
+def secret(name: str, default: str = "") -> str:
+    try:
+        return str(st.secrets.get(name, os.getenv(name, default)))
+    except Exception:
+        return os.getenv(name, default)
+
+
+def safe_sources(response):
+    """Only display URLs supplied by Google's grounding metadata."""
+    output = []
+    try:
+        candidates = response.candidates or []
+        for candidate in candidates:
+            metadata = getattr(candidate, "grounding_metadata", None)
+            for chunk in (getattr(metadata, "grounding_chunks", None) or []):
+                web = getattr(chunk, "web", None)
+                uri = getattr(web, "uri", None)
+                title = getattr(web, "title", None)
+                if uri and urlparse(uri).scheme == "https" and uri not in [x[1] for x in output]:
+                    output.append((str(title or urlparse(uri).netloc), str(uri)))
+    except Exception:
+        pass
+    return output[:8]
+
+
+def ask_gemini(messages, profile, use_search):
+    from google import genai
+    from google.genai import types
+
+    api_key = secret("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError("Add GEMINI_API_KEY in your Streamlit app's Secrets settings to enable AI guidance.")
+    model = secret("GEMINI_MODEL", "gemini-2.5-flash")
+    client = genai.Client(api_key=api_key)
+    context = "User-provided profile (blank means unknown):\n" + "\n".join(f"{k}: {v or 'Not provided'}" for k, v in profile.items())
+    context += f"\nToday's date: {date.today().isoformat()}\n"
+    recent = messages[-14:]
+    transcript = "\n\n".join(f"{m['role'].upper()}: {m['content']}" for m in recent)
+    prompt = context + "\nConversation:\n" + transcript + "\n\nRespond to the latest USER message."
+    config_args = {"system_instruction": SYSTEM, "temperature": 0.35}
+    if use_search:
+        config_args["tools"] = [types.Tool(google_search=types.GoogleSearch())]
+    response = client.models.generate_content(model=model, contents=prompt, config=types.GenerateContentConfig(**config_args))
+    answer = (response.text or "").strip()
+    if not answer:
+        raise RuntimeError("The AI service returned no text. Please try again.")
+    return answer, safe_sources(response)
+
+
 st.title("🧭 PathWise AI")
-st.caption("Personalized learning pathways and education opportunity matching · Research prototype")
-st.info("Catalog-based recommendations are demonstrative, not admissions or scholarship eligibility decisions. Always verify details on the provider's website.")
+st.caption("Personalized education, career guidance and opportunity discovery")
+st.write("Tell me where you are today and where you want to go. I'll help you explore your options and decide what to do next.")
 
-@st.cache_data
-def load_catalog(name):
-    return pd.read_csv(ROOT / "data" / name).fillna("")
-
-resources = load_catalog("resources.csv")
-opportunities = load_catalog("opportunities.csv")
 with st.sidebar:
-    st.header("Your learner profile")
-    goal = st.text_area("What do you want to achieve?", value="Become an NLP engineer and build reliable AI applications", height=100)
-    skills = st.text_input("Skills you already have (comma-separated)", "python, pandas, machine learning")
-    level = st.selectbox("Current level", ["beginner", "intermediate", "advanced"], index=1)
-    hours = st.slider("Study hours per week", 1, 30, 8)
-    budget = st.number_input("Maximum resource budget (USD)", min_value=0.0, value=0.0, step=10.0)
-    method = st.selectbox("Recommendation approach", ["hybrid", "text-only"], help="Hybrid uses TF-IDF retrieval plus goal, prerequisite, level, time and budget signals. Text-only is a TF-IDF baseline.")
-    st.caption("Your profile is used for this session only; no user accounts or persistent profiles are created.")
-profile = normalize_profile(goal, skills, hours, budget, level)
+    st.subheader("Your background (optional)")
+    education = st.text_area("Education", placeholder="e.g. Bachelor's in biology", height=75)
+    experience = st.text_area("Experience and skills", placeholder="e.g. 2 years in banking, Python basics", height=90)
+    location = st.text_input("Country or preferred destination", placeholder="e.g. Pakistan; study in Germany")
+    constraints = st.text_area("Budget, time or other preferences", placeholder="e.g. Need funding; 6 hours/week", height=85)
+    st.caption("This information is used for the current session. Avoid entering sensitive personal details.")
+    if st.button("Start new conversation", use_container_width=True):
+        st.session_state.messages = []
+        st.rerun()
 
-def render_cards(frame, label):
-    if frame.empty:
-        st.warning("No recommendations found.")
-        return
-    for i, r in frame.iterrows():
-        with st.container(border=True):
-            left, right = st.columns([4, 1])
-            with left:
-                st.subheader(f"{i+1}. {r['title']}")
-                st.caption(f"{r['provider']} · {r['type']} · {r['level']} · approx. {r['hours']} hours")
-                st.write(r["description"])
-                st.write("**Why this was suggested:** " + r["reasons"])
-                if r["missing_prerequisites"]:
-                    st.warning("Prerequisites to review: " + r["missing_prerequisites"])
-                st.link_button("Visit official source", r["url"])
-            with right:
-                st.metric("Ranking score", f"{r['score']:.3f}")
-                st.caption("Relative ranking score, not a probability of success")
-    st.download_button(f"Download {label} CSV", frame.to_csv(index=False).encode(), file_name=f"pathwise_{label}.csv", mime="text/csv")
+profile = {"Education": education, "Experience and skills": experience, "Location preferences": location, "Constraints": constraints}
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-learning, opps, evaluation, about = st.tabs(["📚 Learning pathways", "🎯 OpportunityMatch", "📊 Evaluation", "ℹ️ Methodology"])
-with learning:
-    st.subheader("Recommended learning resources")
-    st.write("Ranked against your stated goal, prior skills, learning level, time and budget.")
-    ranked = recommend(resources, profile, top_k=7, mode=method)
-    render_cards(ranked, "learning")
-    st.divider()
-    st.subheader("Optional AI explanation")
-    st.caption("Gemini explains the catalog-ranked results; it does not select or rerank them.")
-    if st.button("Generate personalized explanation", key="learn_explain"):
-        try:
-            key = st.secrets.get("GEMINI_API_KEY", "")
-            model = st.secrets.get("GEMINI_MODEL", "gemini-2.5-flash")
-        except (FileNotFoundError, KeyError):
-            key, model = "", "gemini-2.5-flash"
-        with st.spinner("Preparing evidence-grounded explanation..."):
-            output, error = explain(profile, ranked, key, model)
-        if output: st.markdown(output)
-        if error: st.warning(error)
-with opps:
-    st.subheader("OpportunityMatch — education and research opportunities")
-    st.write("Discover relevant official directories and programs. Listings are illustrative and **not** verified as currently open or individually eligible.")
-    ranked_opps = recommend(opportunities, profile, top_k=10, mode=method)
-    render_cards(ranked_opps, "opportunities")
-    st.caption("Eligibility, geography, deadlines, funding and cohort availability require checking official pages. A zero cost field means no listed catalog access cost; it does not guarantee a program is free.")
-with evaluation:
-    st.subheader("Reproducible offline ranking evaluation")
-    st.write("Compare TF-IDF retrieval against hybrid ranking on **four hand-labeled illustrative scenarios**. These are developer-defined labels, not an independent user study or the AgentRecBench dataset.")
-    with open(ROOT / "data" / "evaluation_scenarios.json", encoding="utf-8") as f:
-        scenarios = json.load(f)
-    report = evaluate_profiles(resources, scenarios)
-    st.dataframe(report, use_container_width=True, hide_index=True)
-    summary = report.groupby("method", as_index=False)[["precision_at_5", "ndcg_at_5", "budget_satisfaction"]].mean()
-    st.subheader("Mean metrics across scenarios")
-    st.dataframe(summary, use_container_width=True, hide_index=True)
-    st.bar_chart(summary.set_index("method")[["precision_at_5", "ndcg_at_5"]])
-    st.download_button("Download evaluation CSV", report.to_csv(index=False), file_name="pathwise_evaluation.csv", mime="text/csv")
-    st.caption("Precision@5 and NDCG@5 depend on manually chosen relevance labels; these results do not establish real-world effectiveness or superiority to an LLM-only baseline.")
-with about:
-    st.subheader("How the system works")
-    st.markdown("""1. **Profile modeling:** Users supply a goal, skills, study time, budget and level.
-2. **Retrieval:** TF-IDF unigram/bigram vectorization produces a text similarity score.
-3. **Hybrid ranking:** Weighted text relevance, goal-skill overlap, prerequisite readiness, difficulty and study-time fit; over-budget results are penalized.
-4. **Evidence-grounded explanations:** Optional Gemini summarizes only the returned catalog entries, without controlling their order.
-5. **Evaluation:** A small transparent scenario set compares text-only and hybrid rankings.
+if not st.session_state.messages:
+    st.markdown("**What can I help you with?**")
+    for i, starter in enumerate(STARTERS):
+        if st.button(starter, key=f"starter_{i}", use_container_width=True):
+            st.session_state.pending = starter
+            st.rerun()
 
-**Important:** TF-IDF is lexical vector retrieval, not neural semantic embeddings. This version does not use live web scraping, verified admissions eligibility, persistent learner memory, or an LLM-only baseline. Those are planned research extensions.
-""")
-    st.write("**Data provenance:** A small hand-curated demonstration catalog of public provider resources. URLs point to official provider pages, but availability and prices may change.")
-    st.write("**Privacy:** No authentication or database. Inputs are processed in the current Streamlit session; using Gemini sends the profile and selected catalog items to the model provider.")
+for m in st.session_state.messages:
+    with st.chat_message(m["role"]):
+        st.markdown(m["content"])
+        if m.get("sources"):
+            with st.expander("Sources found during this response"):
+                for title, url in m["sources"]:
+                    st.markdown(f"- [{title}]({url})")
+
+with st.expander("Search preferences", expanded=False):
+    use_search = st.checkbox("Use Google Search grounding for current opportunities and program details", value=True, help="Uses supported Gemini grounding; availability depends on the selected model and API account.")
+
+question = st.chat_input("Ask about your education, career or future opportunities...")
+question = question or st.session_state.pop("pending", None)
+if question:
+    st.session_state.messages.append({"role": "user", "content": question})
+    with st.chat_message("user"):
+        st.markdown(question)
+    with st.chat_message("assistant"):
+        with st.spinner("Preparing your personalized guidance..."):
+            try:
+                answer, sources = ask_gemini(st.session_state.messages, profile, use_search)
+                st.markdown(answer)
+                if sources:
+                    with st.expander("Sources found during this response"):
+                        for title, url in sources:
+                            st.markdown(f"- [{title}]({url})")
+                elif use_search:
+                    st.caption("No source links were returned. Current opportunity details are not independently verified.")
+                st.session_state.messages.append({"role": "assistant", "content": answer, "sources": sources})
+            except Exception as exc:
+                st.error(f"AI guidance unavailable: {exc}")
+                st.info("Check GEMINI_API_KEY, GEMINI_MODEL, and API quota in Streamlit Secrets. If your model does not support search grounding, turn off the search option and retry.")
+                st.session_state.messages.pop()
+
+st.divider()
+st.caption("PathWise provides guidance, not official admission, scholarship, immigration or employment decisions. Verify time-sensitive requirements with official organizations.")
