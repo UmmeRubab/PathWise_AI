@@ -1,215 +1,79 @@
-## PathWise AI — Conversational Advisor (Version 2)
+# PathWise AI — CV-Informed Personalized Career Guidance (Version 3)
 
-### Research problem
-Learners and working professionals often struggle to identify education and career pathways suited to their academic backgrounds, transferable skills, personal constraints, and evolving aspirations. General guidance may not adapt sufficiently to the individual or offer actionable next steps.
-
-### Research goal
-Develop an LLM-powered personalized education and career decision-support system that interprets user goals and backgrounds, explores realistic alternatives, supports discovery of academic opportunities, and produces adaptable action plans through natural-language interaction.
-
-### Research question
-How effectively can conversational profile understanding and grounded information retrieval support personalized education and career guidance across different learner backgrounds and constraints?
-
-### Implemented interface
-- One conversational interface for career transitions, higher education, opportunity discovery and personalized plans.
-- Optional background information, used within the current session.
-- Multi-turn follow-up questions with recent conversation context.
-- Gemini-generated tailored guidance.
-- Optional Google Search grounding through the Gemini API, with available returned source links displayed.
-- No demonstration catalog, numerical ranking scores, algorithm selector, or public evaluation dashboard.
-
-### Technical approach
-Streamlit provides the interface. The `google-genai` SDK calls a configured Gemini model. Optional Gemini Google Search grounding can retrieve recent information where supported. Grounding links are displayed only when returned by the provider. The app does not scrape or maintain its own scholarship database, independently verify admissions eligibility, or guarantee up-to-date results.
-
-### Evaluation status and limitations
-Version 2 is an interactive research prototype. It has not been validated through a user study or independently benchmarked against human advisors or alternative recommendation systems. A future evaluation should examine usefulness, personalization, source support, fairness across learner backgrounds, and the accuracy of time-sensitive opportunity information. A lack of grounding citations is not evidence of verification.
-
-### Deployment
-Use `app.py` as the Streamlit entry point and `requirements.txt` for dependencies. In Streamlit Cloud secrets, set:
-
-```toml
-GEMINI_API_KEY = "your-key"
-GEMINI_MODEL = "gemini-2.5-flash"
-```
-
-Do not commit API keys. Search grounding depends on Gemini model and account availability. If grounding fails, disable the Search preferences checkbox.
-
-### Research references
-Keep the research literature and USAII CAIE curriculum citations in the existing project's README. These motivate the project; they do not establish the performance of this implementation.
-
-
----
-
-## Previous prototype and research background
-
-# PathWise AI
-
-**Personalized Learning Pathways and Education Opportunity Matching**
-
-PathWise AI is a Streamlit research prototype that helps learners explore learning resources and educational opportunities based on their goals, existing skills, available study time, budget, and experience level. Its **OpportunityMatch** feature provides a separate view of official learning, fellowship, scholarship-directory, and research-opportunity resources.
-
-> **Research question:** Can a hybrid recommendation system combining structured learner profiles, vector-based retrieval, and evidence-grounded LLM explanations produce more relevant and reliable learning recommendations than simpler baselines?
->
-> This question is a research motivation, **not an established experimental result**. The current release compares hybrid ranking with a lexical retrieval baseline; an LLM-only comparison and independent user study are future work.
+**Live application:** https://path-wiseai.streamlit.app/  
+**Repository:** https://github.com/UmmeRubab/PathWise_AI
 
 ## Research problem
 
-Learners and students often struggle to identify educational opportunities, relevant skills, and learning resources that align with their academic background, career aspirations, financial constraints, and available time. Existing guidance platforms may provide broad recommendations without sufficiently adapting to each individual's circumstances, evolving goals, and learning progress.
+People pursuing career transitions or educational advancement often struggle to translate their qualifications and experience into realistic next steps. Generic guidance may not account for transferable skills, personal goals, local employment opportunities, or accessible ways to develop relevant skills.
 
-PathWise AI explores how personalized, accessible guidance can connect learners with relevant resources and educational opportunities. It does **not** claim to determine admission or scholarship eligibility.
+## Research goal
 
-## Research goal and objectives
+Develop and investigate an LLM-powered personalized decision-support system that interprets a CV and a self-defined career goal, identifies transferable skills and development needs, and creates practical, resource-conscious career and learning pathways. The prototype also explores location-aware discovery of public opportunity sources.
 
-**Primary goal:** Develop and evaluate an intelligent, LLM-powered personalized recommendation system that analyzes learner profiles, identifies skill gaps, and recommends suitable learning pathways, educational resources, and academic opportunities. The system aims to make educational and career guidance more accessible, adaptive, and actionable through natural language interaction, semantic matching, and explainable recommendations.
+## Research question
 
-The project aims to:
+How effectively can CV-informed profile understanding and goal-directed LLM planning produce relevant, actionable learning and career guidance for individuals with different educational backgrounds, skills, and local opportunities?
 
-1. **Represent learner needs** through goals, existing skills, experience level, weekly study time, and budget.
-2. **Rank learning resources transparently** using relevance and explicit learner constraints, rather than relying solely on free-form LLM suggestions.
-3. **Explain recommendations with traceable catalog information** and clearly distinguish resource discovery from verified opportunity availability or eligibility.
-4. **Evaluate recommendation quality** against a simpler retrieval baseline using relevance-ranking and constraint-satisfaction metrics.
-5. **Investigate future improvements**, including neural semantic retrieval, cold-start personalization, changing learner preferences, and an LLM-only comparison.
+## User experience
 
-**Research hypothesis (to be tested):** A profile-aware hybrid ranking approach can improve relevance and constraint satisfaction compared with a text-only retrieval baseline, while grounded LLM explanations may improve interpretability without changing the underlying ranking. This is a hypothesis, not a demonstrated outcome.
+A single page with three inputs: optional **CV / resume** (text-based PDF, DOCX or TXT, max 5 MB), required **career or education goal**, and optional **city and country**. Results appear in four sections: **Learn Online**, **Jobs Near You / Remote**, **Build Your Skills**, and **Other Opportunities**.
 
-**Scope of version 1.0:** The current implementation uses a curated catalog, TF-IDF retrieval, hand-designed ranking weights, and four illustrative evaluation scenarios. It is a proof of concept rather than a validated large-scale recommender. The optional Gemini layer generates explanations; it does not validate opportunities or make eligibility decisions.
+No sidebar, course catalog, raw JSON, numerical fit scores, or chatbot navigation.
 
-## Live application
+## Architecture and implementation
 
-Deploy this repository on Streamlit Community Cloud with `app.py` as the entry point. No live URL is claimed until deployment is complete.
+1. Extract text from CV using `pypdf`, `python-docx`, or UTF-8 decoding.
+2. Send CV text, user goal and optional location to Gemini to produce a structured plan.
+3. Display practical learning activities, realistic job categories, staged skills roadmap, and experience-building opportunities.
+4. When a location is supplied, optionally use Gemini Google Search grounding to discover relevant public source pages. Only links supplied in grounding metadata are displayed.
+5. If discovery is unavailable, identify roles as suggestions rather than confirmed vacancies and offer an external search link.
 
-## Features implemented in version 1.0
+**Scope:** This version does not independently verify that a particular vacancy is open, establish eligibility, calculate acceptance probabilities, or train a separate recommendation model. It does not claim these capabilities.
 
-- **Learner profile:** Goal, skills, experience level, weekly study time, and budget.
-- **Learning recommendations:** Ranked catalog of public learning resources, with score components and understandable reasons.
-- **OpportunityMatch:** Relevant official program and opportunity-directory links, clearly distinguished from confirmed open positions or eligibility decisions.
-- **Auditable hybrid ranking:** TF-IDF lexical vector retrieval plus explicit goal overlap, prerequisite readiness, level fit, time fit, and budget penalty.
-- **Optional Gemini explanations:** The LLM explains **already-ranked** resources using supplied catalog facts; it does not control ranking or verify eligibility.
-- **Evaluation dashboard:** Text-only retrieval versus hybrid ranking using Precision@5, NDCG@5, and budget-satisfaction rate on four hand-labeled illustrative scenarios.
-- **CSV exports:** Ranked resources, opportunities, and offline evaluation results.
-- **API-key-free mode:** Ranking, opportunity matching, and evaluation work without Gemini.
+## Deployment
 
-## Architecture
-
-```text
-User goal + skills + level + weekly time + budget
-                        |
-                Structured profile
-                        |
-           Curated catalog (CSV files)
-                        |
-        TF-IDF unigram/bigram vectorization
-                        |
-          Text similarity (cosine score)
-                        |
-     Hybrid constraints and relevance scoring
-                        |
-            Ranked recommendations
-                 /              \
-     Explainable UI       Optional Gemini
-     + official links     grounded explanation
-                        |
-             Offline baseline evaluation
-```
-
-### Ranking methodology
-
-For each candidate resource, the hybrid ranking score is:
-
-```text
-score = 0.42 * TF-IDF cosine similarity
-      + 0.23 * goal-to-skill token overlap
-      + 0.17 * prerequisite readiness
-      + 0.10 * learner-level fit
-      + 0.08 * time fit
-```
-
-An item that exceeds the stated budget receives a multiplicative penalty of 0.2. Scores are **relative ranking signals**, not calibrated probabilities of success, suitability, or acceptance. The text-only baseline uses TF-IDF cosine similarity alone. Weight values are initial engineering choices, not experimentally optimized coefficients.
-
-**Terminology:** TF-IDF is lexical vector retrieval; the initial release does **not** implement neural semantic embeddings, a trained recommendation model, or a persistent user-memory agent.
-
-## Technology
-
-- Python 3.12 recommended
-- Streamlit
-- pandas, NumPy, scikit-learn
-- Google Gemini via `google-genai` (optional explanation layer)
-- CSV catalogs and JSON evaluation scenarios
-
-## Local installation (Windows PowerShell)
-
-```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-streamlit run app.py
-```
-
-A Gemini key is **optional**. To enable explanations, create `.streamlit/secrets.toml` locally:
+Replace the repository's `app.py`, `requirements.txt`, `README.md`, and `.gitignore`. In Streamlit Community Cloud, set `app.py` as the entry point and add the following under **Secrets**:
 
 ```toml
-GEMINI_API_KEY = "YOUR_API_KEY"
+GEMINI_API_KEY = "YOUR_OWN_KEY"
 GEMINI_MODEL = "gemini-2.5-flash"
 ```
 
-The secrets file is excluded by `.gitignore`. Never commit an API key. Model availability, quotas, and pricing are controlled by the provider; set a model accessible to your account.
+Never commit an API key. Google Search grounding depends on provider/model availability and quota.
 
-## Deploy on Streamlit Community Cloud
+Windows PowerShell, from the existing PathWise_AI repository folder:
 
-1. Create a GitHub repository and push the project files (do not commit `.venv` or `.streamlit/secrets.toml`).
-2. In Streamlit Community Cloud, select the repository and `app.py`.
-3. Add `GEMINI_API_KEY` and `GEMINI_MODEL` under the application's **Secrets** settings only if optional explanations are desired.
-4. Deploy and test the learning, opportunity, and evaluation tabs.
-
-## Repository structure
-
-```text
-PathWise_AI/
-├── app.py
-├── pathwise/
-│   ├── __init__.py
-│   ├── engine.py
-│   └── llm.py
-├── data/
-│   ├── resources.csv
-│   ├── opportunities.csv
-│   └── evaluation_scenarios.json
-├── tests/
-│   └── test_engine.py
-├── .streamlit/
-│   └── config.toml
-├── .gitignore
-├── requirements.txt
-└── README.md
+```powershell
+git add app.py README.md requirements.txt .gitignore
+git commit -m "Redesign PathWise with CV-based personalized plans"
+git pull --rebase origin main
+git push origin main
 ```
 
-## Evaluation design and limitations
+## Evaluation status
 
-The `Evaluation` tab compares the text-only and hybrid ranking methods on four **developer-created illustrative profiles** with manually selected relevant catalog IDs. It reports Precision@5, NDCG@5, and the fraction of returned items within the specified budget. These labels are not independently annotated, and the small catalog and scenario count are insufficient for claims about statistical significance, fairness, real learner outcomes, or superior performance against a generative LLM.
+**Research prototype; no formal validation yet.** Future evaluation should compare CV-informed guidance with a goal-only LLM baseline across diverse consented or synthetic CV profiles. Potential metrics: expert-rated relevance, actionability, skill-gap coverage, factual support of opportunity suggestions, location relevance, and fairness across backgrounds. No benchmark gains are claimed.
 
-**Next research steps:**
+## Privacy and limitations
 
-1. Add neural embeddings and measure gains over TF-IDF.
-2. Implement a reproducible LLM-only baseline and an ablation study for each hybrid feature.
-3. Expand to independently labeled recommendation relevance judgments, cold-start and changing-preference scenarios, and larger datasets.
-4. Track learning progress with privacy-conscious, opt-in profile memory.
-5. Add an opportunity ingestion pipeline with source timestamps, eligibility parsing, provenance, and freshness checks.
-6. Assess explanation faithfulness separately from recommendation relevance and investigate demographic fairness and constraint violations.
-
-## OpportunityMatch safety and data provenance
-
-The included catalog is a small **hand-curated demonstration dataset** pointing to public provider pages. Entries are not live scraped and should **not** be treated as currently open scholarships, fellowships, admissions offers, or verified individual eligibility. Program rules, prices, cohort dates, country restrictions, and deadlines can change. Some entries are directories rather than individual opportunities. A zero catalog cost does not imply that all linked programs are free.
-
-The application does not create accounts or persist learner profiles. When optional Gemini explanations are used, the learner profile and selected resource descriptions are transmitted to the configured model provider. Users should avoid entering sensitive personal information.
+- CV content is processed during the session and transmitted to the configured Gemini provider when generating a plan. Provider-side retention is governed by the provider/account terms.
+- The app itself does not create a persistent CV database. Avoid uploading national IDs, financial details, or other unnecessary sensitive information.
+- Scanned PDFs without selectable text are unsupported; save legacy `.doc` files as `.docx`.
+- AI-generated guidance may be inaccurate or incomplete. Source links are discovery aids, not proof of active vacancies.
+- The app does not independently verify job eligibility, hiring status, admissions requirements, or program availability.
 
 ## Research foundation and references
 
-The following works inform the research motivation and future evaluation design; **citing them does not imply their full algorithms have been implemented**.
+These sources motivate the approach and proposed evaluation; they do **not** demonstrate this implementation's performance.
 
-1. **Xu, Y., et al. (2026).** *Toward Personalized LLM-Powered Agents: Foundations, Evaluation, and Future Directions.* arXiv:2602.22680. https://arxiv.org/abs/2602.22680 — Surveys personalized LLM agents through profile modeling, memory, planning, and action execution.
-2. **Shang, Y., et al. (2025).** *AgentRecBench: Benchmarking LLM Agent-based Personalized Recommender Systems.* Advances in Neural Information Processing Systems (NeurIPS 2025), Datasets and Benchmarks Track. https://arxiv.org/abs/2505.19623 ; https://proceedings.neurips.cc/paper_files/paper/2025/hash/e2d6f7249add096e26679eade1b4cc6f-Abstract-Datasets_and_Benchmarks_Track.html — Introduces classic, cold-start, and evolving-interest recommendation evaluation settings.
-3. **Generative LLMs for educational recommendation (2026).** *Frontiers in Artificial Intelligence.* https://www.frontiersin.org/journals/artificial-intelligence/articles/10.3389/frai.2026.1827553/full — Discusses deterministic educational ranking with evidence-grounded generative explanations and evaluation of explanation reliability.
-4. **Pedregosa, F., et al. (2011).** *Scikit-learn: Machine Learning in Python.* Journal of Machine Learning Research 12, 2825–2830. https://jmlr.org/papers/v12/pedregosa11a.html — Foundation for the vectorization and similarity implementation.
+1. Xu, Y., et al. (2026). *Toward Personalized LLM-Powered Agents: Foundations, Evaluation, and Future Directions.* arXiv:2602.22680. https://arxiv.org/abs/2602.22680
+2. Shang, Y., et al. (2025). *AgentRecBench: Benchmarking LLM Agent-based Personalized Recommender Systems.* NeurIPS 2025 Datasets and Benchmarks. https://arxiv.org/abs/2505.19623
+3. *Generative LLMs for educational recommendation.* (2026). *Frontiers in Artificial Intelligence.* https://www.frontiersin.org/journals/artificial-intelligence/articles/10.3389/frai.2026.1827553/full
+4. United States Artificial Intelligence Institute (USAII), Certified Artificial Intelligence Engineer (CAIE) curriculum. https://www.usaii.org/
+5. Gemini API Google Search grounding documentation. https://ai.google.dev/gemini-api/docs/google-search
+6. Streamlit documentation. https://docs.streamlit.io/
 
 ## Status
 
-**Version 1.0 — Implemented research prototype.** The software is suitable for demonstrating a reproducible hybrid ranking pipeline and identifying questions for more rigorous recommendation research. It has not been validated as a production admissions adviser or an experimentally proven personalized learning intervention.
+**Version 3 — CV-aware personalized planning prototype.**
