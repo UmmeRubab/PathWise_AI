@@ -37,7 +37,7 @@ Replace the repository's `app.py`, `requirements.txt`, `README.md`, and `.gitign
 
 ```toml
 GEMINI_API_KEY = "YOUR_OWN_KEY"
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-3.8-flash"
 ```
 
 Never commit an API key. Google Search grounding depends on provider/model availability and quota.
