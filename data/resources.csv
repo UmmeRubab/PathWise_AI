@@ -1,0 +1,16 @@
+id,title,provider,type,skills,prerequisites,level,hours,cost_usd,url,description
+r1,Python Tutorial,Python Software Foundation,course,python programming,,beginner,12,0,https://docs.python.org/3/tutorial/,Official Python language tutorial
+r2,Python Data Science Handbook,Open textbook,course,python pandas numpy data analysis,python,intermediate,20,0,https://jakevdp.github.io/PythonDataScienceHandbook/,Open resource for data analysis with Python
+r3,Machine Learning Crash Course,Google,course,machine learning classification regression evaluation,python,beginner,15,0,https://developers.google.com/machine-learning/crash-course,Foundational ML concepts and exercises
+r4,Scikit-learn User Guide,scikit-learn,course,machine learning evaluation classification python,python,intermediate,16,0,https://scikit-learn.org/stable/user_guide.html,Practical model development and evaluation
+r5,Hugging Face NLP Course,Hugging Face,course,nlp transformers tokenization embeddings python,python,intermediate,24,0,https://huggingface.co/learn/nlp-course/chapter1/1,Practical NLP and transformer fundamentals
+r6,Sentence Transformers Documentation,Sentence Transformers,course,embeddings semantic search retrieval python,python,intermediate,12,0,https://sbert.net/,Embeddings and semantic similarity workflows
+r7,Hugging Face Agents Course,Hugging Face,course,ai agents tool use llm python,python,intermediate,18,0,https://huggingface.co/learn/agents-course/unit0/introduction,Agent architectures and tools
+r8,LangGraph Documentation,LangChain,course,ai agents workflow orchestration llm python,python,advanced,12,0,https://langchain-ai.github.io/langgraph/,Stateful agent workflow reference
+r9,Full Stack Deep Learning,Full Stack Deep Learning,course,mlops deployment evaluation machine learning python,python,advanced,25,0,https://fullstackdeeplearning.com/,Applied ML system engineering
+r10,Google Responsible AI Practices,Google,course,responsible ai fairness evaluation transparency,,beginner,8,0,https://ai.google/responsibility/responsible-ai-practices/,Responsible AI principles and evaluation considerations
+r11,Streamlit Documentation,Streamlit,course,streamlit python deployment,python,beginner,8,0,https://docs.streamlit.io/,Build interactive Python applications
+r12,PyTorch Tutorials,PyTorch,course,deep learning neural networks pytorch python,python,intermediate,24,0,https://pytorch.org/tutorials/,Hands-on deep learning tutorials
+r13,Stanford CS224N Materials,Stanford,course,nlp deep learning transformers,python machine learning,advanced,40,0,https://web.stanford.edu/class/cs224n/,Advanced natural language processing material
+r14,Google RAG Concepts,Google Cloud,course,rag retrieval llm embeddings,python,intermediate,10,0,https://cloud.google.com/architecture/rag-capable-gen-ai-app-using-vertex-ai,Reference architecture for retrieval-augmented generation
+r15,Google Data Analytics Learning Resources,Google,course,data analysis visualization sql,,beginner,15,0,https://grow.google/certificates/data-analytics/,Data analytics learning pathway information; certificate may be paid

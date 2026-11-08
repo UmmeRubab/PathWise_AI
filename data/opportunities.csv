@@ -1,0 +1,11 @@
+id,title,provider,type,skills,prerequisites,level,hours,cost_usd,url,description
+p1,Hugging Face Open Learning,Hugging Face,learning opportunity,nlp transformers ai agents python,python,intermediate,12,0,https://huggingface.co/learn,Public learning programs and courses; check current enrollment
+p2,Google Summer of Code,Google,programming opportunity,open source python software engineering,programming,intermediate,100,0,https://summerofcode.withgoogle.com/,Open-source contributor program; eligibility and application dates change
+p3,Outreachy,Outreachy,internship opportunity,open source programming documentation,programming,beginner,100,0,https://www.outreachy.org/,Open-source internship program; eligibility and application dates change
+p4,MLH Fellowship,Major League Hacking,fellowship opportunity,software engineering open source python,programming,intermediate,100,0,https://fellowship.mlh.io/,Fellowship information; check current cohorts and eligibility
+p5,Stanford Code in Place,Stanford,learning opportunity,python programming,,beginner,30,0,https://codeinplace.stanford.edu/,Introductory programming course; enrollment is seasonal
+p6,DeepLearning.AI Short Courses,DeepLearning.AI,learning opportunity,llm rag ai agents machine learning python,python,intermediate,10,0,https://www.deeplearning.ai/short-courses/,Short AI courses; access and pricing can change
+p7,MIT OpenCourseWare,MIT,learning opportunity,computer science mathematics machine learning,,beginner,40,0,https://ocw.mit.edu/,Open course materials; not a scholarship or admission offer
+p8,DAAD Scholarship Database,DAAD,scholarship directory,graduate study research germany,,advanced,2,0,https://www.daad.de/en/studying-in-germany/scholarships/daad-scholarship-database/,Scholarship search directory; individual awards have separate eligibility
+p9,Erasmus Mundus Joint Masters,Erasmus+,scholarship directory,graduate study europe,,advanced,2,0,https://erasmus-plus.ec.europa.eu/opportunities/opportunities-for-individuals/students/erasmus-mundus-joint-masters,Official information on joint masters; not a PhD program
+p10,EURAXESS Jobs and Funding,EURAXESS,research opportunity directory,phd research europe,,advanced,2,0,https://euraxess.ec.europa.eu/jobs,Research vacancy portal; individual positions require eligibility checks
